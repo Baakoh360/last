@@ -851,6 +851,51 @@
                 font-size: 1rem;
             }
         }
+        
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1100;
+            padding-top: 50px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90vh;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.3s ease;
+        }
+        
+        .modal-content.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .image-modal.show {
+            opacity: 1;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1101;
+        }
     </style>
 </head>
 
@@ -993,33 +1038,104 @@
                     productGrid.innerHTML = '<div class="no-products">No products found</div>';
                     return;
                 }
+                // Image modal functionality
+                const modal = document.getElementById('image-modal');
+                const modalImg = document.getElementById('full-image');
+                const closeModal = document.querySelector('.close-modal');
 
-                // Create product cards
-                products.forEach(product => {
-                    if (!product.inStock) return; // Skip out-of-stock products for the main page
+                // Function to open the modal
+                function openImageModal(src) {
+                    modal.style.display = 'block';
+                    modalImg.src = src;
 
-                    const productCard = document.createElement('div');
-                    productCard.className = 'product-card';
-                    productCard.innerHTML = `
-                <div class="product-image">
-                    <img src="${product.imageUrl}" alt="${product.name}" onerror="this.src='/uploads/default-product.jpg'">
-                </div>
-                <div class="product-info">
-                    <h3>${product.name}</h3>
-                    <div class="product-price">GH₵${product.price.toFixed(2)}</div>
-                    <div class="contact-btn">
-                        <a href="https://wa.me/233244414709?text=I'm%20interested%20in%20${encodeURIComponent(product.name)}" class="whatsapp-btn" target="_blank">
-                            <i class="fab fa-whatsapp"></i> WhatsApp
-                        </a>
-                        <a href="tel:+233244414709" class="call-btn">
-                            <i class="fas fa-phone"></i> Call
-                        </a>
-                    </div>
-                </div>
-            `;
-                    productGrid.appendChild(productCard);
+                    // Trigger reflow before adding the class
+                    void modal.offsetWidth;
+
+                    modal.classList.add('show');
+                    setTimeout(() => {
+                        modalImg.classList.add('show');
+                    }, 100);
+
+                    // Prevent scrolling on the body
+                    document.body.style.overflow = 'hidden';
+                }
+
+                // Close modal when clicking the X
+                closeModal.addEventListener('click', closeImageModal);
+
+                // Close modal when clicking outside the image
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closeImageModal();
+                    }
                 });
+
+                // Close modal with Escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && modal.classList.contains('show')) {
+                        closeImageModal();
+                    }
+                });
+
+                function closeImageModal() {
+                    modalImg.classList.remove('show');
+
+                    setTimeout(() => {
+                        modal.classList.remove('show');
+                        setTimeout(() => {
+                            modal.style.display = 'none';
+                            // Re-enable scrolling
+                            document.body.style.overflow = '';
+                        }, 300);
+                    }, 100);
+                }
+
+                // Update the displayProducts function to make images clickable
+                function displayProducts(products) {
+                    // Clear previous content
+                    productGrid.innerHTML = '';
+
+                    if (products.length === 0) {
+                        productGrid.innerHTML = '<div class="no-products">No products found</div>';
+                        return;
+                    }
+
+                    // Create product cards
+                    products.forEach(product => {
+                        if (!product.inStock) return; // Skip out-of-stock products for the main page
+
+                        const productCard = document.createElement('div');
+                        productCard.className = 'product-card';
+                        productCard.innerHTML = `
+      <div class="product-image">
+        <img src="${product.imageUrl}" alt="${product.name}" onerror="this.src='/uploads/default-product.jpg'">
+      </div>
+      <div class="product-info">
+        <h3>${product.name}</h3>
+        <div class="product-price">GH₵${product.price.toFixed(2)}</div>
+        <div class="contact-btn">
+          <a href="https://wa.me/233244414709?text=I'm%20interested%20in%20${encodeURIComponent(product.name)}" class="whatsapp-btn" target="_blank">
+            <i class="fab fa-whatsapp"></i> WhatsApp
+          </a>
+          <a href="tel:+233244414709" class="call-btn">
+            <i class="fas fa-phone"></i> Call
+          </a>
+        </div>
+      </div>
+    `;
+
+                        productGrid.appendChild(productCard);
+
+                        // Add click event to the product image
+                        const productImage = productCard.querySelector('.product-image img');
+                        productImage.style.cursor = 'pointer';
+                        productImage.addEventListener('click', function() {
+                            openImageModal(this.src);
+                        });
+                    });
+                }
             }
+
 
             // Show loading indicator
             function showLoading() {
